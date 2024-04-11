@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic Tac Toe Game</title>
+    <style>
+        /* Add some CSS styling for better visualization */
+        #gameBoard { /*this is exclusively used to display the game board as a 8 by 8 size with a space of 30px between each index */            
+            display: grid;
+            grid-template-columns: repeat(8, 30px); /* Adjust the width of columns as needed */
+            grid-template-rows: repeat(8, 30px); /* Adjust the height of rows as needed */
+            gap: 5px; /* Adjust the gap between pixels as needed */
+            margin: 0 auto
+            
+        }
+        .pixel {/*set the size of each pixel */
+            width: 50px; /* Adjust the width of pixels as needed */
+            height: 50px; /* Adjust the height of pixels as needed */
+            border: 1px solid black; /* Add border for better visualization */
+        }
+        #errorContainer {/*this is used to get the middle position on the webserver it will make a boarder with the colour red
+                            and the text is white */
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(255, 0, 0, 0.8); /* Red background with some transparency */
+            padding: 20px;
+            border-radius: 10px;
+            color: white;
+            text-align: center;
+            z-index: 9999; /* Ensure the error message appears on top of other content */
+            display: none; /* Initially hide the error container */
+            pointer-events: none
+        }
+        .button-container {/*This is used to position the button that the user can click its position is defined by the variables
+                            top and left */
+            display: flex; /* Use flexbox layout */
+            align-items: center; /* Align items vertically */
+            position: fixed;
+            top: 20%;
+            left: 40%;
+            transform: translateX(-50%, -50%);
+            z-index: 1; /* Ensure the button container appears above the game board */
+        }
+        .button-container button {
+            margin-right: 10px; /* Add some space between buttons */
+        }
+        .container {
+            max-width: 960px; /* Set max width for content */
+            margin: 0 auto; /* Center align content */
+            padding: 20px;
+        }
+        header, footer {
+            background-color: #343a40; /* Dark background color for header and footer */
+            color: #fff; /* White text color */
+            padding: 20px 0;
+            text-align: center;
+        }
+        footer {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+        }        
+               
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Welcome to Tic Tac Toe Game</h1>
+        </div>
+    </header>
+    <main>
+        <div class="container">
+            <div class="button-container">
+                <button onclick="initializeGame()">Initialize Game</button>
+                <button onclick="weekAiTurn()">Weak AI Turn</button>
+                <button onclick="strongAiTurn()">Strong AI Turn</button>
+                <button onclick="openSpreadsheet()">Go to Spreadsheet</button>
+                <button onclick="ResetGame()">Reset</button>
+                <form action="/logout" method="post">
+                    <input type="submit" value="Logout">
+                </form>
+            </div>
+
+            <!-- Game board will be displayed here -->
+            <div id="gameBoard"></div>
+            <div id="errorContainer"></div>
+        </div>
+    </main>
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 Tic Tac Toe Game. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>          
+        function initializeGame() {
+            fetch('/get_game_board') /* fetch('/get_game_board') sends an HTTP request to the server, targeting the '/get_game_board' 
+            route. This request is processed by the server-side code associated with the '/get_game_board' 
+            route*/
+                .then(response => response.json())// reads all the information that the function returned and change it to a JavaScript object
+                .then(data => {/*once the .then from before is completed this part will run. data is the value that was returned from the server */
+                    clearErrorMessage() //if theres a error message on the screen clear that message
+                    console.log(data);// delete this line when submitting
+                    displayGameBoard(data); //Call the displayGameBoard function with data as a paramater
+                });
+        }
+        function ResetGame() {
+            fetch('/resetGameBoard') /*fetch('/resetGameBoard') sends an HTTP request to the server, targeting the '/resetGameBoard' 
+                                        route. This request is processed by the server-side code associated with the '/resetGameBoard' 
+                                        route*/
+                .then(response => response.json())// reads all the information that the function returned and change it to a JavaScript object
+                .then(data => { /*once the .then from before is completed this part will run data is the value that was returned from the server */
+                    clearErrorMessage() //if theres a error message on the screen clear that message
+                    console.log(data); // delete this line when submitting
+                    displayGameBoard(data); //Call the displayGameBoard function with data as a paramater
+                });
+        }
+        
+        function clearErrorMessage() {
+            const errorContainer = document.getElementById('errorContainer');
+            errorContainer.style.display = 'none'; // Hide the error container
+        }
+        function weekAiTurn() {
+            fetch('/weekai')
+            .then(response => {
+                if (response.status === 204||response.status === 400) { // these are the different errors that the program caught
+                    throw new Error('Player2 in use');
+                }
+                else if (response.status === 500){
+                    throw new Error('Invalid Position')
+                }
+                else if(response.status === 300){
+                    throw new Error('Weak Ai won')
+                }
+                else if(response.status !== 200){
+                    throw new Error('unexpected Error')
+                }
+                else{                    
+                    return response.json();
+                }                  
+                
+            })
+            .then(data => {
+                console.log(data);// delete this line when submitting
+                clearErrorMessage()
+                displayGameBoard(data); 
+                initializeGame()               
+            })
+            .catch(error => {
+                // Display the error message in the center of the page
+                const errorContainer = document.getElementById('errorContainer');
+                errorContainer.innerHTML = ''; // Clear previous error messages
+                const errorMessage = document.createElement('h1');
+            
+                // Check the type of error caught
+                if (error.message === 'Player2 in use') {
+                    errorMessage.textContent = 'Player 2 in use. Cant use Weak AI.';
+                } else if (error.message === 'Invalid Position') {
+                    errorMessage.textContent = 'Invalid Position. Please select a valid position.';
+                } else if (error.message === 'unexpected Error'){
+                    errorMessage.textContent = 'An unexpected error occurred. Please try again later.';
+                }else if(error.message === 'Weak Ai won'){
+                    errorMessage.textContent = 'Weak Ai won';
+                }else{                    
+                    return response.json();
+                }
+                
+                errorContainer.appendChild(errorMessage);
+                errorContainer.style.display = 'block'; // Show the error container
+                console.error('Error:', error.message);                
+            });
+            
+        }
+        function sendPosition(row, col) {
+            fetch('/select_position', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    row: row,
+                    col: col
+                })
+            })
+            .then(response => {
+                console.log(row)// delete this line when submitting
+                console.log(col)// delete this line when submitting
+                if (response.status === 204 || response.status === 400) {
+                    throw new Error('AI in use');
+                } else if (response.status === 500) {
+                    throw new Error('Invalid Position');
+                } else if(response.status === 300){
+                    throw new Error('player 1 won')
+                }else if(response.status === 301){
+                    throw new Error('player 2 won')
+                }else if (response.status !== 200) {
+                    throw new Error('unexpected Error');
+                }else {
+                    return response.json();
+                }
+            })
+            .then(data => {
+                console.log(data);// delete this line when submitting
+                clearErrorMessage();
+                displayGameBoard(data); 
+                initializeGame()               
+            })
+            .catch(error => {
+                // Display the error message in the center of the page
+                const errorContainer = document.getElementById('errorContainer');
+                errorContainer.innerHTML = ''; // Clear previous error messages
+                const errorMessage = document.createElement('h1');
+            
+                // Check the type of error caught
+                if (error.message === 'AI in use') {
+                    errorMessage.textContent = 'AI in use. Please wait for your turn.';
+                } else if (error.message === 'Invalid Position') {
+                    errorMessage.textContent = 'Invalid Position. Please select a valid position.';
+                } else if (error.message === 'unexpected Error'){
+                    errorMessage.textContent = 'An unexpected error occurred. Please try again later.';
+                }else if (error.message === 'player 1 won'){
+                    errorMessage.textContent = 'player 1 won'; 
+                }else if (error.message === 'player 2 won'){
+                    errorMessage.textContent = 'player 2 won';
+                }else {
+                    errorMessage.textContent = 'An unexpected error occurred. Please try again later.';
+                }                
+                errorContainer.appendChild(errorMessage);
+                errorContainer.style.display = 'block'; // Show the error container
+                console.error('Error:', error.message);                
+            });
+        }
+        function strongAiTurn(){
+            fetch('/strongAi')
+                .then(response => {
+                    if (response.status === 204||response.status === 400) {
+                        throw new Error('Player2 in use');
+                    }
+                    else if (response.status === 500){
+                        throw new Error('Invalid Position')
+                    }
+                    else if(response.status === 300){
+                        throw new Error('Strong Ai won')
+                    }                    
+                    else if(response.status !== 200){
+                        throw new Error('unexpected Error')
+                    }
+                    else{                    
+                        return response.json();
+                    }                  
+                    
+                })
+                .then(data => {
+                    console.log(data);// delete this line when submitting
+                    clearErrorMessage()
+                    displayGameBoard(data); 
+                    initializeGame()                   
+                })
+                .catch(error => {
+                    // Display the error message in the center of the page
+                    const errorContainer = document.getElementById('errorContainer');
+                    errorContainer.innerHTML = ''; // Clear previous error messages
+                    const errorMessage = document.createElement('h1');
+                
+                    // Check the type of error caught
+                    if (error.message === 'Player2 in use') {
+                        errorMessage.textContent = 'Player 2 in use. Cant use Strong AI.';
+                    } else if (error.message === 'Invalid Position') {
+                        errorMessage.textContent = 'Invalid Position. Please select a valid position.';
+                    } else if (error.message === 'unexpected Error'){
+                        errorMessage.textContent = 'An unexpected error occurred. Please try again later.';
+                    } else if(error.message === 'Strong Ai won'){
+                        errorMessage.textContent = 'Strong Ai won';
+                    }
+                    else{                    
+                        return response.json();
+                    }
+                    
+                    errorContainer.appendChild(errorMessage);
+                    errorContainer.style.display = 'block'; // Show the error container
+                    console.error('Error:', error.message);                    
+                });
+        }         
+        function openSpreadsheet() {
+            fetch('/open_spreadsheet')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    const url = data.url;
+                    window.open(url, '_blank'); // Open the URL in a new tab
+                })
+                .catch(error => {
+                    console.error('There was a problem with the fetch operation:', error);
+                    // Handle errors if needed
+                });
+        }       
+        
+        // JavaScript function to logout when the tab is closed
+        window.addEventListener('beforeunload', function (event) {
+            // Send a request to log the user out when the window is closed or refreshed
+            fetch('/logout', { method: 'POST', credentials: 'same-origin', async: false });
+        });
+        
+      
+        // Make sure the RGB color values received from the server are applied correctly
+        function displayGameBoard(data) {
+            const gameBoardDiv = document.getElementById('gameBoard');
+            gameBoardDiv.innerHTML = '';
+
+            data.forEach((row, rowIndex) => {
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'row';
+                row.forEach((pixel, colIndex) => {
+                    const pixelDiv = document.createElement('div');
+                    pixelDiv.className = 'pixel';
+
+                    // Check if the current position is one of the specified positions to be colored black
+                    if ((rowIndex == 2 && colIndex >= 0 && colIndex <= 7) ||
+                        (rowIndex == 5 && colIndex >= 0 && colIndex <= 7) ||
+                        (rowIndex >= 0 && rowIndex <= 7 && colIndex == 2) ||
+                        (rowIndex >= 0 && rowIndex <= 7 && colIndex == 5)) {
+                        pixelDiv.style.backgroundColor = 'black';
+                    } else {
+                        // Invert the color values for white (0, 0, 0) -> (255, 255, 255)
+                        if (pixel[0] == 0 && pixel[1] == 0 && pixel[2] == 0) {
+                            const invertedColor = pixel.map(value => 255 - value);
+                            pixelDiv.style.backgroundColor = `rgb(${invertedColor[0]}, ${invertedColor[1]}, ${invertedColor[2]})`;
+                        } else {
+                            pixelDiv.style.backgroundColor = `rgb(${pixel[0]}, ${pixel[1]}, ${pixel[2]})`;
+                        }
+                    }
+
+                    // Add click event listener to each pixel
+                    pixelDiv.addEventListener('click', () => {
+                        console.log(rowIndex,colIndex);
+                        sendPosition(rowIndex, colIndex); // Send both row and column indices to the server
+                    });
+
+                    rowDiv.appendChild(pixelDiv);
+                });
+                gameBoardDiv.appendChild(rowDiv);
+            });            
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+</head>
+<body>
+    <h1>Login</h1>
+    <form action="/login" method="post" id="loginForm">
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" required><br><br>
+        <label for="Email">Email:</label>
+        <input type="text" id="Email" name="Email" required><br><br>
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required disabled><br><br>
+        <input type="submit" value="Login">
+    </form>
+    <p id="usernameError" style="color: red; display: none;">Please enter a valid username first.</p>
+    {% if error %}
+    <p>{{ error }}</p>
+    {% endif %}
+
+    <script>
+        // Disable password input until a valid username is entered
+        document.getElementById('username').addEventListener('input', function() {
+            var passwordInput = document.getElementById('password');
+            var usernameError = document.getElementById('usernameError');
+            passwordInput.disabled = true;
+            usernameError.style.display = 'none';
+        });
+
+        // Enable password input when a valid username is entered
+        document.getElementById('username').addEventListener('blur', function() {
+            var usernameInput = document.getElementById('username');
+            var passwordInput = document.getElementById('password');
+            var usernameError = document.getElementById('usernameError');
+            if (usernameInput.value.trim() !== '') {
+                passwordInput.disabled = false;
+            } else {
+                passwordInput.disabled = true;
+                usernameError.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>
