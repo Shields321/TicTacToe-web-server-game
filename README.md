@@ -13,3 +13,6 @@ The file will also start up Ngrok Tunnelling so that it can be played on differe
 The game is not really meant to be a fully developed game, as right now some errors and other problems will come.
 Something you should know is that the game can only allow two people on the web server.
 I haven't tried to see if, when one person leaves, another person can join.
+
+# As of 2024-10-29 
+The spreedsheet portion of the webserver doesn't function as the file needed for connecting to the spreedsheet is removed for security.
